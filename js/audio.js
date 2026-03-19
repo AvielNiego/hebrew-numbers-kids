@@ -5,6 +5,7 @@ class AudioManager {
         this.ctx = null;
         this.enabled = true;
         this.initialized = false;
+        this.audioCache = {};
     }
 
     init() {
@@ -22,19 +23,44 @@ class AudioManager {
         return this.enabled;
     }
 
-    speak(text, rate = 0.85) {
+    // Use Google Translate TTS for high-quality Hebrew speech
+    _googleTtsUrl(text) {
+        return `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=he&q=${encodeURIComponent(text)}`;
+    }
+
+    _playAudioUrl(url) {
         if (!this.enabled) return Promise.resolve();
         return new Promise(resolve => {
+            const audio = new Audio(url);
+            audio.volume = 1.0;
+            audio.onended = resolve;
+            audio.onerror = () => {
+                // Fallback to SpeechSynthesis
+                this._speakFallback(url.includes('q=') ? decodeURIComponent(url.split('q=')[1]) : '');
+                resolve();
+            };
+            audio.play().catch(() => {
+                this._speakFallback(decodeURIComponent(url.split('q=')[1] || ''));
+                resolve();
+            });
+        });
+    }
+
+    _speakFallback(text) {
+        if (!this.enabled || !text) return;
+        try {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'he-IL';
-            utterance.rate = rate;
+            utterance.rate = 0.85;
             utterance.pitch = 1.1;
-            utterance.onend = resolve;
-            utterance.onerror = resolve;
             speechSynthesis.cancel();
             speechSynthesis.speak(utterance);
-            setTimeout(resolve, 3000);
-        });
+        } catch (e) { /* ignore */ }
+    }
+
+    speak(text, rate = 0.85) {
+        if (!this.enabled) return Promise.resolve();
+        return this._playAudioUrl(this._googleTtsUrl(text));
     }
 
     speakNumber(n) {
@@ -44,8 +70,8 @@ class AudioManager {
     }
 
     speakPraise() {
-        const phrase = pickRandom(PRAISE);
-        return this.speak(phrase.replace('!', ''));
+        const phrase = pickRandom(PRAISE).replace('!', '');
+        return this.speak(phrase);
     }
 
     playTone(freq, duration = 0.15, type = 'sine') {
@@ -99,8 +125,10 @@ class AudioManager {
     }
 
     playGentleError() {
-        this.playTone(300, 0.15, 'triangle');
-        setTimeout(() => this.playTone(250, 0.2, 'triangle'), 100);
+        // More noticeable wrong sound — descending tones
+        this.playTone(400, 0.15, 'triangle');
+        setTimeout(() => this.playTone(300, 0.15, 'triangle'), 120);
+        setTimeout(() => this.playTone(200, 0.25, 'triangle'), 240);
     }
 
     playCountStep(n) {

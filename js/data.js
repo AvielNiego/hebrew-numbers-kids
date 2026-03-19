@@ -52,6 +52,8 @@ export const GAMES = [
     { id: 'matching', icon: '\uD83E\uDDE9', label: '\u05DE\u05E6\u05D0 \u05D4\u05EA\u05D0\u05DE\u05D4' },
     { id: 'collecting', icon: '\uD83E\uDDFA', label: '\u05DE\u05DC\u05D0 \u05D0\u05EA \u05D4\u05E1\u05DC' },
     { id: 'find-number', icon: '\uD83D\uDC42', label: '\u05E9\u05DE\u05E2 \u05D5\u05DE\u05E6\u05D0' },
+    { id: 'bubbles', icon: '\uD83E\uDEE7', label: '\u05D1\u05D5\u05E2\u05D5\u05EA' },
+    { id: 'market', icon: '\uD83D\uDED2', label: '\u05E9\u05D5\u05E7' },
 ];
 
 export const NUMBER_COLORS = [

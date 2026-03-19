@@ -6,6 +6,8 @@ import { createSubitizingGame } from './games/subitizing.js';
 import { createMatchingGame } from './games/matching.js';
 import { createCollectingGame } from './games/collecting.js';
 import { createFindNumberGame } from './games/find-number.js';
+import { createBubblesGame } from './games/bubbles.js';
+import { createMarketGame } from './games/market.js';
 import { confetti, starBurst } from './animations.js';
 
 const app = document.getElementById('app');
@@ -239,6 +241,8 @@ function startGame(gameId) {
             'matching': createMatchingGame,
             'collecting': createCollectingGame,
             'find-number': createFindNumberGame,
+            'bubbles': createBubblesGame,
+            'market': createMarketGame,
         };
 
         const creator = creators[gameId];
