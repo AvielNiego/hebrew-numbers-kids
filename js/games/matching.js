@@ -2,18 +2,7 @@ import { randomInRange, generateChoices, getNumberData, NUMBER_COLORS } from '..
 import { audio } from '../audio.js';
 import { popIn, addIdleWiggle } from '../animations.js';
 import { celebrateCorrect, celebrateAttempt } from '../components/celebration.js';
-
-function makeGroupHtml(theme, count) {
-    let html = '';
-    for (let i = 0; i < count; i++) {
-        if (theme && theme.useImages) {
-            html += `<img src="${theme.images[i % theme.images.length]}" alt="" class="theme-obj-img" style="width:36px;height:36px;"> `;
-        } else {
-            html += '\uD83C\uDF4E ';
-        }
-    }
-    return html;
-}
+import { setObjectContent, objectInlineHtml } from '../theme-helpers.js';
 
 export function createMatchingGame(container, phase, onComplete, theme) {
     const mode = Math.random() > 0.5 ? 'numToGroup' : 'groupToNum';
@@ -26,7 +15,7 @@ export function createMatchingGame(container, phase, onComplete, theme) {
         const choiceValues = generateChoices(target, phase.min, phase.max, Math.min(3, phase.max - phase.min + 1));
 
         const groupsHtml = choiceValues.map(n => {
-            const group = makeGroupHtml(theme, n);
+            const group = objectInlineHtml(theme, n);
             return `<button class="choice-btn" data-value="${n}" style="width:auto;height:auto;border-radius:var(--radius);padding:12px 16px;min-width:80px;min-height:80px;font-size:1.8rem;display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;">${group}</button>`;
         }).join('');
 
@@ -52,15 +41,7 @@ export function createMatchingGame(container, phase, onComplete, theme) {
         for (let i = 0; i < target; i++) {
             const el = document.createElement('div');
             el.className = 'object-item';
-            if (theme && theme.useImages) {
-                const img = document.createElement('img');
-                img.src = theme.images[i % theme.images.length];
-                img.alt = '';
-                img.className = 'theme-obj-img';
-                el.appendChild(img);
-            } else {
-                el.textContent = '\uD83C\uDF4E';
-            }
+            setObjectContent(el, theme, i);
             el.style.animationDelay = (i * 0.08) + 's';
             popIn(el);
             area.appendChild(el);

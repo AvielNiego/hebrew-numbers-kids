@@ -2,21 +2,7 @@ import { randomInRange, generateChoices, getNumberData } from '../data.js';
 import { audio } from '../audio.js';
 import { popIn, addIdleWiggle } from '../animations.js';
 import { celebrateCorrect, celebrateAttempt } from '../components/celebration.js';
-
-function makeObjectEl(theme, index) {
-    const el = document.createElement('div');
-    el.className = 'object-item';
-    if (theme && theme.useImages) {
-        const img = document.createElement('img');
-        img.src = theme.images[index % theme.images.length];
-        img.alt = '';
-        img.className = 'theme-obj-img';
-        el.appendChild(img);
-    } else {
-        el.textContent = '\uD83C\uDF4E';
-    }
-    return el;
-}
+import { setObjectContent } from '../theme-helpers.js';
 
 export function createSubitizingGame(container, phase, onComplete, theme) {
     const target = randomInRange(phase.min, phase.max);
@@ -33,7 +19,9 @@ export function createSubitizingGame(container, phase, onComplete, theme) {
 
         const flashArea = container.querySelector('#flash-area');
         for (let i = 0; i < target; i++) {
-            const el = makeObjectEl(theme, i);
+            const el = document.createElement('div');
+            el.className = 'object-item';
+            setObjectContent(el, theme, i);
             el.style.animationDelay = (i * 0.08) + 's';
             popIn(el);
             flashArea.appendChild(el);
@@ -49,7 +37,6 @@ export function createSubitizingGame(container, phase, onComplete, theme) {
             choicesEl.appendChild(btn);
         });
 
-        // Flash: show objects briefly, then fade
         setTimeout(() => {
             flashArea.querySelectorAll('.object-item').forEach(el => {
                 el.style.transition = 'opacity 0.3s ease';
@@ -67,7 +54,6 @@ export function createSubitizingGame(container, phase, onComplete, theme) {
 
         const btn = e.currentTarget;
 
-        // Reveal objects again
         container.querySelectorAll('.object-item').forEach(el => {
             el.style.opacity = '1';
         });

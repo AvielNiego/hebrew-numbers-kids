@@ -2,6 +2,7 @@ import { randomInRange, getNumberData, NUMBER_COLORS } from '../data.js';
 import { audio } from '../audio.js';
 import { popIn } from '../animations.js';
 import { celebrateCorrect } from '../components/celebration.js';
+import { setObjectContent } from '../theme-helpers.js';
 
 export function createCollectingGame(container, phase, onComplete, theme) {
     const target = randomInRange(phase.min, phase.max);
@@ -34,16 +35,9 @@ export function createCollectingGame(container, phase, onComplete, theme) {
         for (let i = 0; i < totalObjects; i++) {
             const el = document.createElement('div');
             el.className = 'draggable-object';
-            if (theme && theme.useImages) {
-                const img = document.createElement('img');
-                img.src = theme.images[i % theme.images.length];
-                img.alt = '';
-                img.className = 'theme-obj-img';
-                img.style.pointerEvents = 'none';
-                el.appendChild(img);
-            } else {
-                el.textContent = '\uD83C\uDF4E';
-            }
+            setObjectContent(el, theme, i);
+            // Make child images non-interactive for drag
+            el.querySelectorAll('img').forEach(img => img.style.pointerEvents = 'none');
             el.dataset.index = i;
 
             const x = 10 + Math.random() * (Math.min(areaRect.width, 300) - 60);
@@ -89,7 +83,7 @@ export function createCollectingGame(container, phase, onComplete, theme) {
             basket.classList.toggle('hover', isOver);
         };
 
-        const onEnd = (e) => {
+        const onEnd = () => {
             if (!dragging || dragging !== el) return;
             el.classList.remove('dragging');
 

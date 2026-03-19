@@ -2,6 +2,7 @@ import { randomInRange, getNumberData } from '../data.js';
 import { audio } from '../audio.js';
 import { popIn, addIdleWiggle } from '../animations.js';
 import { celebrateCorrect } from '../components/celebration.js';
+import { setObjectContent } from '../theme-helpers.js';
 
 export function createCountingGame(container, phase, onComplete, theme) {
     const target = randomInRange(phase.min, phase.max);
@@ -20,15 +21,7 @@ export function createCountingGame(container, phase, onComplete, theme) {
         for (let i = 0; i < target; i++) {
             const el = document.createElement('div');
             el.className = 'object-item';
-            if (theme && theme.useImages) {
-                const img = document.createElement('img');
-                img.src = theme.images[i % theme.images.length];
-                img.alt = '';
-                img.className = 'theme-obj-img';
-                el.appendChild(img);
-            } else {
-                el.textContent = '\uD83C\uDF4E';
-            }
+            setObjectContent(el, theme, i);
             el.dataset.index = i;
             el.style.animationDelay = (i * 0.08) + 's';
             popIn(el);

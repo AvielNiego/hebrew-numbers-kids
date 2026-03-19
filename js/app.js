@@ -1,11 +1,12 @@
-import { PHASES, GAMES, NUMBER_COLORS } from './data.js';
+import { PHASES, GAMES, NUMBER_COLORS, OBJECTS, pickRandom } from './data.js';
 import { audio } from './audio.js';
-import { THEMES, getTheme, setTheme, loadSavedTheme } from './themes.js';
+import { getTheme, setTheme, loadSavedTheme, getVisibleThemes, unlockFather, isFatherUnlocked } from './themes.js';
 import { createCountingGame } from './games/counting.js';
 import { createSubitizingGame } from './games/subitizing.js';
 import { createMatchingGame } from './games/matching.js';
 import { createCollectingGame } from './games/collecting.js';
 import { createFindNumberGame } from './games/find-number.js';
+import { confetti, starBurst } from './animations.js';
 
 const app = document.getElementById('app');
 
@@ -46,6 +47,9 @@ function showScreen(html, className = '') {
 
 // ====== Theme Icon Helper ======
 function themeIconHtml(theme, size = 60) {
+    if (theme.iconEmoji) {
+        return `<span style="font-size:${size * 0.6}px;line-height:1">${theme.iconEmoji}</span>`;
+    }
     return `<img src="${theme.icon}" alt="${theme.name}" class="theme-photo" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;">`;
 }
 
@@ -64,15 +68,17 @@ function showSplash() {
 
     screen.querySelector('#start-btn').addEventListener('click', () => {
         audio.init();
-        showThemePicker();
+        showHome();
     });
 }
 
 // ====== Theme Picker Screen ======
 function showThemePicker() {
     const currentTheme = getTheme();
-    const themesHtml = THEMES.map(t => `
-        <button class="theme-card ${t.id === currentTheme.id ? 'selected' : ''}" data-theme="${t.id}">
+    const themes = getVisibleThemes();
+
+    const themesHtml = themes.map(t => `
+        <button class="theme-card ${t.id === currentTheme.id ? 'selected' : ''} ${t.hidden ? 'easter-egg-theme' : ''}" data-theme="${t.id}">
             <div class="theme-icon-wrap">${themeIconHtml(t, 70)}</div>
             <div class="theme-name">${t.name}</div>
         </button>
@@ -91,6 +97,48 @@ function showThemePicker() {
             showHome();
         });
     });
+}
+
+// ====== Easter Egg: rapid clicks on theme button ======
+let easterEggClicks = 0;
+let easterEggTimer = null;
+
+function handleThemeButtonClick(e) {
+    if (isFatherUnlocked()) {
+        // Already unlocked, just go to picker
+        audio.playWhoosh();
+        showThemePicker();
+        return;
+    }
+
+    easterEggClicks++;
+
+    if (easterEggClicks >= 5) {
+        // Easter egg triggered!
+        easterEggClicks = 0;
+        clearTimeout(easterEggTimer);
+        unlockFather();
+
+        // Celebration effect
+        const rect = e.currentTarget.getBoundingClientRect();
+        confetti(40);
+        starBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 12);
+        audio.playSuccess();
+        audio.speak('הפתעה');
+
+        // Go to theme picker after a beat so they see the father theme
+        setTimeout(() => showThemePicker(), 1200);
+        return;
+    }
+
+    // Reset counter if clicks are too slow (must be within 500ms each)
+    clearTimeout(easterEggTimer);
+    easterEggTimer = setTimeout(() => {
+        // If they didn't reach 5, treat as normal click
+        easterEggClicks = 0;
+        audio.playWhoosh();
+        showThemePicker();
+    }, 500);
 }
 
 // ====== Home Screen ======
@@ -121,11 +169,8 @@ function showHome() {
         <div class="games-grid">${gamesHtml}</div>
     `, 'home');
 
-    // Theme switch button
-    screen.querySelector('#theme-switch').addEventListener('click', () => {
-        audio.playWhoosh();
-        showThemePicker();
-    });
+    // Theme switch button with easter egg
+    screen.querySelector('#theme-switch').addEventListener('click', handleThemeButtonClick);
 
     // Phase selection
     screen.querySelectorAll('.phase-btn').forEach(btn => {

@@ -708,6 +708,12 @@ body {
     text-align: center;
 }
 
+.easter-egg-theme {
+    animation: glow-pulse 1.5s ease infinite;
+    border-color: #e040fb;
+    background: linear-gradient(135deg, rgba(255, 245, 255, 0.95), rgba(224, 64, 251, 0.1));
+}
+
 .theme-photo {
     border: 3px solid var(--color-accent);
     box-shadow: var(--shadow-sm);

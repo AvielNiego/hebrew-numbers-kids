@@ -2,6 +2,18 @@ const IMG = 'assets/images/themes';
 
 export const THEMES = [
     {
+        id: 'original',
+        name: 'מספרים',
+        iconEmoji: '🌈',
+        bgStart: '#667eea',
+        bgEnd: '#764ba2',
+        accent: '#fdcb6e',
+        surface: 'rgba(255, 255, 255, 0.95)',
+        useImages: false,
+        objects: ['🍎', '🍊', '🍓', '🍇', '🍌', '⭐', '🐟', '🦋', '🌻', '🚗', '🌈', '🎂', '🐶', '🐱', '🐥'],
+        celebrationEmojis: ['🎉', '🌟', '🌈', '🤩', '💫'],
+    },
+    {
         id: 'paw-patrol',
         name: 'מפרץ ההרפתקאות',
         icon: `${IMG}/paw-patrol/chase.png`,
@@ -92,39 +104,62 @@ export const THEMES = [
         ],
         celebrationEmojis: ['✈️', '🌍', '📦', '⭐', '🎉'],
     },
-    {
-        id: 'father',
-        name: 'עם אבא',
-        icon: 'assets/images/father.jpg',
-        bgStart: '#4a148c',
-        bgEnd: '#7b1fa2',
-        accent: '#e040fb',
-        surface: 'rgba(255, 245, 255, 0.95)',
-        useImages: true,
-        images: [
-            'assets/images/father.jpg',
-            'assets/images/father.jpg',
-            'assets/images/father.jpg',
-            'assets/images/father.jpg',
-            'assets/images/father.jpg',
-            'assets/images/father.jpg',
-            'assets/images/father.jpg',
-            'assets/images/father.jpg',
-            'assets/images/father.jpg',
-            'assets/images/father.jpg',
-        ],
-        celebrationEmojis: ['❤️', '🤗', '⭐', '🎈', '🎉'],
-    },
 ];
 
+// Father theme is hidden — only revealed via easter egg
+export const FATHER_THEME = {
+    id: 'father',
+    name: 'עם אבא',
+    icon: 'assets/images/father.jpg',
+    bgStart: '#4a148c',
+    bgEnd: '#7b1fa2',
+    accent: '#e040fb',
+    surface: 'rgba(255, 245, 255, 0.95)',
+    useImages: true,
+    hidden: true,
+    images: [
+        'assets/images/father.jpg',
+        'assets/images/father.jpg',
+        'assets/images/father.jpg',
+        'assets/images/father.jpg',
+        'assets/images/father.jpg',
+        'assets/images/father.jpg',
+        'assets/images/father.jpg',
+        'assets/images/father.jpg',
+        'assets/images/father.jpg',
+        'assets/images/father.jpg',
+    ],
+    celebrationEmojis: ['❤️', '🤗', '⭐', '🎈', '🎉'],
+};
+
 let currentTheme = null;
+let fatherUnlocked = false;
 
 export function getTheme() {
     return currentTheme || THEMES[0];
 }
 
+export function isFatherUnlocked() {
+    return fatherUnlocked;
+}
+
+export function unlockFather() {
+    fatherUnlocked = true;
+    try {
+        localStorage.setItem('learn_numbers_father', '1');
+    } catch (e) { /* ignore */ }
+}
+
+export function getVisibleThemes() {
+    if (fatherUnlocked) {
+        return [...THEMES, FATHER_THEME];
+    }
+    return THEMES;
+}
+
 export function setTheme(themeId) {
-    currentTheme = THEMES.find(t => t.id === themeId) || THEMES[0];
+    const allThemes = [...THEMES, FATHER_THEME];
+    currentTheme = allThemes.find(t => t.id === themeId) || THEMES[0];
     applyThemeCSS(currentTheme);
     try {
         localStorage.setItem('learn_numbers_theme', currentTheme.id);
@@ -134,9 +169,17 @@ export function setTheme(themeId) {
 
 export function loadSavedTheme() {
     try {
+        const savedFather = localStorage.getItem('learn_numbers_father');
+        if (savedFather === '1') fatherUnlocked = true;
+
         const saved = localStorage.getItem('learn_numbers_theme');
         if (saved) {
-            currentTheme = THEMES.find(t => t.id === saved) || THEMES[0];
+            const allThemes = [...THEMES, FATHER_THEME];
+            currentTheme = allThemes.find(t => t.id === saved) || THEMES[0];
+            // If father theme was selected but not unlocked, fall back
+            if (currentTheme.hidden && !fatherUnlocked) {
+                currentTheme = THEMES[0];
+            }
             applyThemeCSS(currentTheme);
         }
     } catch (e) { /* ignore */ }
