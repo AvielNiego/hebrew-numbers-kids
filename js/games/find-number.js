@@ -3,7 +3,7 @@ import { audio } from '../audio.js';
 import { popIn, addIdleWiggle } from '../animations.js';
 import { celebrateCorrect, celebrateAttempt } from '../components/celebration.js';
 
-export function createFindNumberGame(container, phase, onComplete) {
+export function createFindNumberGame(container, phase, onComplete, theme) {
     const target = randomInRange(phase.min, phase.max);
     const choices = generateChoices(target, phase.min, phase.max, Math.min(3, phase.max - phase.min + 1));
     let answered = false;

@@ -3,9 +3,9 @@ import { audio } from '../audio.js';
 import { popIn } from '../animations.js';
 import { celebrateCorrect } from '../components/celebration.js';
 
-export function createCollectingGame(container, phase, onComplete) {
+export function createCollectingGame(container, phase, onComplete, theme) {
     const target = randomInRange(phase.min, phase.max);
-    const objectEmoji = pickRandomObject();
+    const objectEmoji = pickRandomObject(theme && theme.objects);
     const totalObjects = target + randomInRange(1, 3);
     let collected = 0;
     let dragging = null;

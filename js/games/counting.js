@@ -3,9 +3,9 @@ import { audio } from '../audio.js';
 import { popIn, addIdleWiggle } from '../animations.js';
 import { celebrateCorrect } from '../components/celebration.js';
 
-export function createCountingGame(container, phase, onComplete) {
+export function createCountingGame(container, phase, onComplete, theme) {
     const target = randomInRange(phase.min, phase.max);
-    const objectEmoji = pickRandomObject();
+    const objectEmoji = pickRandomObject(theme && theme.objects);
     let counted = 0;
     const items = [];
     let cleanupIdle = null;

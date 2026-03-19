@@ -3,9 +3,9 @@ import { audio } from '../audio.js';
 import { popIn, addIdleWiggle } from '../animations.js';
 import { celebrateCorrect, celebrateAttempt } from '../components/celebration.js';
 
-export function createSubitizingGame(container, phase, onComplete) {
+export function createSubitizingGame(container, phase, onComplete, theme) {
     const target = randomInRange(phase.min, phase.max);
-    const objectEmoji = pickRandomObject();
+    const objectEmoji = pickRandomObject(theme && theme.objects);
     const choices = generateChoices(target, phase.min, phase.max, Math.min(3, phase.max - phase.min + 1));
     let answered = false;
     let cleanupIdle = null;

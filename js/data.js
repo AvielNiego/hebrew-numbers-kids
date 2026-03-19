@@ -76,8 +76,8 @@ export function pickRandom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export function pickRandomObject() {
-    return pickRandom(OBJECTS);
+export function pickRandomObject(themeObjects) {
+    return pickRandom(themeObjects || OBJECTS);
 }
 
 export function shuffle(arr) {

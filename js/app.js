@@ -1,5 +1,6 @@
 import { PHASES, GAMES, NUMBER_COLORS } from './data.js';
 import { audio } from './audio.js';
+import { THEMES, getTheme, setTheme, loadSavedTheme } from './themes.js';
 import { createCountingGame } from './games/counting.js';
 import { createSubitizingGame } from './games/subitizing.js';
 import { createMatchingGame } from './games/matching.js';
@@ -14,11 +15,13 @@ const state = {
     soundEnabled: true,
 };
 
-// Load saved phase
+// Load saved state
 try {
     const saved = localStorage.getItem('learn_numbers_phase');
     if (saved != null) state.currentPhase = parseInt(saved);
 } catch (e) { /* ignore */ }
+
+loadSavedTheme();
 
 function saveState() {
     try {
@@ -37,9 +40,16 @@ function showScreen(html, className = '') {
     screen.className = `screen ${className}`;
     screen.innerHTML = html;
     app.appendChild(screen);
-    // Trigger reflow then activate
     requestAnimationFrame(() => screen.classList.add('active'));
     return screen;
+}
+
+// ====== Theme Icon Helper ======
+function themeIconHtml(theme, size = 60) {
+    if (theme.icon === 'father-photo') {
+        return `<img src="${theme.fatherImage}" alt="${theme.name}" class="theme-photo" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;">`;
+    }
+    return `<span style="font-size:${size * 0.6}px">${theme.icon}</span>`;
 }
 
 // ====== Splash Screen ======
@@ -57,12 +67,39 @@ function showSplash() {
 
     screen.querySelector('#start-btn').addEventListener('click', () => {
         audio.init();
-        showHome();
+        showThemePicker();
+    });
+}
+
+// ====== Theme Picker Screen ======
+function showThemePicker() {
+    const currentTheme = getTheme();
+    const themesHtml = THEMES.map(t => `
+        <button class="theme-card ${t.id === currentTheme.id ? 'selected' : ''}" data-theme="${t.id}">
+            <div class="theme-icon-wrap">${themeIconHtml(t, 70)}</div>
+            <div class="theme-name">${t.name}</div>
+        </button>
+    `).join('');
+
+    const screen = showScreen(`
+        <div class="home-title">בחרו נושא</div>
+        <div class="themes-grid">${themesHtml}</div>
+    `, 'theme-picker');
+
+    screen.querySelectorAll('.theme-card').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const themeId = btn.dataset.theme;
+            setTheme(themeId);
+            audio.playPop();
+            showHome();
+        });
     });
 }
 
 // ====== Home Screen ======
 function showHome() {
+    const theme = getTheme();
+
     const phasesHtml = PHASES.map((p, i) => `
         <button class="phase-btn ${i === state.currentPhase ? 'selected' : ''}" data-phase="${i}">
             <span class="phase-icon">${p.icon}</span>
@@ -78,10 +115,20 @@ function showHome() {
     `).join('');
 
     const screen = showScreen(`
-        <div class="home-title">\u05DE\u05D4 \u05E0\u05DC\u05DE\u05D3?</div>
+        <div class="home-header">
+            <button class="theme-switch-btn" id="theme-switch">${themeIconHtml(theme, 40)}</button>
+            <div class="home-title">${theme.name}</div>
+            <div style="width:48px"></div>
+        </div>
         <div class="phases-container">${phasesHtml}</div>
         <div class="games-grid">${gamesHtml}</div>
     `, 'home');
+
+    // Theme switch button
+    screen.querySelector('#theme-switch').addEventListener('click', () => {
+        audio.playWhoosh();
+        showThemePicker();
+    });
 
     // Phase selection
     screen.querySelectorAll('.phase-btn').forEach(btn => {
@@ -108,6 +155,7 @@ function startGame(gameId) {
     state.currentGame = gameId;
     const phase = PHASES[state.currentPhase];
     const gameInfo = GAMES.find(g => g.id === gameId);
+    const theme = getTheme();
     let roundCount = 0;
     let cleanupGame = null;
 
@@ -140,7 +188,6 @@ function startGame(gameId) {
         roundCount++;
 
         const onComplete = () => {
-            // Auto-advance to next round after a short delay
             setTimeout(() => playRound(), 800);
         };
 
@@ -154,7 +201,7 @@ function startGame(gameId) {
 
         const creator = creators[gameId];
         if (creator) {
-            cleanupGame = creator(gameArea, phase, onComplete);
+            cleanupGame = creator(gameArea, phase, onComplete, theme);
         }
     }
 

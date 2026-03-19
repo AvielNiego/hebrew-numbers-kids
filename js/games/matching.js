@@ -3,11 +3,11 @@ import { audio } from '../audio.js';
 import { popIn, addIdleWiggle } from '../animations.js';
 import { celebrateCorrect, celebrateAttempt } from '../components/celebration.js';
 
-export function createMatchingGame(container, phase, onComplete) {
+export function createMatchingGame(container, phase, onComplete, theme) {
     // Alternate between "match numeral to group" and "match group to numeral"
     const mode = Math.random() > 0.5 ? 'numToGroup' : 'groupToNum';
     const target = randomInRange(phase.min, phase.max);
-    const objectEmoji = pickRandomObject();
+    const objectEmoji = pickRandomObject(theme && theme.objects);
     let answered = false;
     let cleanupIdle = null;
 
