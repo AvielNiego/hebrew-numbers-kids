@@ -46,10 +46,7 @@ function showScreen(html, className = '') {
 
 // ====== Theme Icon Helper ======
 function themeIconHtml(theme, size = 60) {
-    if (theme.icon === 'father-photo') {
-        return `<img src="${theme.fatherImage}" alt="${theme.name}" class="theme-photo" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;">`;
-    }
-    return `<span style="font-size:${size * 0.6}px">${theme.icon}</span>`;
+    return `<img src="${theme.icon}" alt="${theme.name}" class="theme-photo" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;">`;
 }
 
 // ====== Splash Screen ======

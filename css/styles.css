@@ -629,6 +629,31 @@ body {
     75% { transform: rotate(3deg) scale(1.02); }
 }
 
+/* ====== Theme Object Images ====== */
+.theme-obj-img {
+    width: clamp(50px, 14vw, 80px);
+    height: clamp(50px, 14vw, 80px);
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+}
+
+.draggable-object .theme-obj-img {
+    width: 56px;
+    height: 56px;
+}
+
+.choice-btn .theme-obj-img {
+    width: 40px;
+    height: 40px;
+}
+
+.object-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ====== Theme Picker ====== */
 .theme-picker {
     padding-top: 32px;

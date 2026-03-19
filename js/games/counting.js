@@ -1,13 +1,11 @@
-import { randomInRange, pickRandomObject, getNumberData } from '../data.js';
+import { randomInRange, getNumberData } from '../data.js';
 import { audio } from '../audio.js';
 import { popIn, addIdleWiggle } from '../animations.js';
 import { celebrateCorrect } from '../components/celebration.js';
 
 export function createCountingGame(container, phase, onComplete, theme) {
     const target = randomInRange(phase.min, phase.max);
-    const objectEmoji = pickRandomObject(theme && theme.objects);
     let counted = 0;
-    const items = [];
     let cleanupIdle = null;
 
     function render() {
@@ -22,13 +20,20 @@ export function createCountingGame(container, phase, onComplete, theme) {
         for (let i = 0; i < target; i++) {
             const el = document.createElement('div');
             el.className = 'object-item';
-            el.textContent = objectEmoji;
+            if (theme && theme.useImages) {
+                const img = document.createElement('img');
+                img.src = theme.images[i % theme.images.length];
+                img.alt = '';
+                img.className = 'theme-obj-img';
+                el.appendChild(img);
+            } else {
+                el.textContent = '\uD83C\uDF4E';
+            }
             el.dataset.index = i;
             el.style.animationDelay = (i * 0.08) + 's';
             popIn(el);
             el.addEventListener('click', () => handleTap(el, i));
             area.appendChild(el);
-            items.push(el);
         }
 
         updateLabel();

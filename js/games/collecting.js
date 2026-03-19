@@ -1,11 +1,10 @@
-import { randomInRange, pickRandomObject, getNumberData, NUMBER_COLORS } from '../data.js';
+import { randomInRange, getNumberData, NUMBER_COLORS } from '../data.js';
 import { audio } from '../audio.js';
 import { popIn } from '../animations.js';
 import { celebrateCorrect } from '../components/celebration.js';
 
 export function createCollectingGame(container, phase, onComplete, theme) {
     const target = randomInRange(phase.min, phase.max);
-    const objectEmoji = pickRandomObject(theme && theme.objects);
     const totalObjects = target + randomInRange(1, 3);
     let collected = 0;
     let dragging = null;
@@ -35,10 +34,18 @@ export function createCollectingGame(container, phase, onComplete, theme) {
         for (let i = 0; i < totalObjects; i++) {
             const el = document.createElement('div');
             el.className = 'draggable-object';
-            el.textContent = objectEmoji;
+            if (theme && theme.useImages) {
+                const img = document.createElement('img');
+                img.src = theme.images[i % theme.images.length];
+                img.alt = '';
+                img.className = 'theme-obj-img';
+                img.style.pointerEvents = 'none';
+                el.appendChild(img);
+            } else {
+                el.textContent = '\uD83C\uDF4E';
+            }
             el.dataset.index = i;
 
-            // Position randomly within the drag area
             const x = 10 + Math.random() * (Math.min(areaRect.width, 300) - 60);
             const y = 10 + Math.random() * (Math.max(areaRect.height, 150) - 60);
             el.style.left = x + 'px';
@@ -72,7 +79,6 @@ export function createCollectingGame(container, phase, onComplete, theme) {
             el.style.left = x + 'px';
             el.style.top = y + 'px';
 
-            // Check if over basket
             const basket = container.querySelector('#basket');
             const basketRect = basket.getBoundingClientRect();
             const elRect = el.getBoundingClientRect();
@@ -120,7 +126,6 @@ export function createCollectingGame(container, phase, onComplete, theme) {
                         }, 500);
                     }
                 } else {
-                    // Too many - bounce back
                     audio.playGentleError();
                     const area = el.parentElement.getBoundingClientRect();
                     el.style.transition = 'left 0.3s ease, top 0.3s ease';

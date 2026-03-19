@@ -1,48 +1,61 @@
-import { randomInRange, pickRandomObject, generateChoices, getNumberData } from '../data.js';
+import { randomInRange, generateChoices, getNumberData } from '../data.js';
 import { audio } from '../audio.js';
 import { popIn, addIdleWiggle } from '../animations.js';
 import { celebrateCorrect, celebrateAttempt } from '../components/celebration.js';
 
+function makeObjectEl(theme, index) {
+    const el = document.createElement('div');
+    el.className = 'object-item';
+    if (theme && theme.useImages) {
+        const img = document.createElement('img');
+        img.src = theme.images[index % theme.images.length];
+        img.alt = '';
+        img.className = 'theme-obj-img';
+        el.appendChild(img);
+    } else {
+        el.textContent = '\uD83C\uDF4E';
+    }
+    return el;
+}
+
 export function createSubitizingGame(container, phase, onComplete, theme) {
     const target = randomInRange(phase.min, phase.max);
-    const objectEmoji = pickRandomObject(theme && theme.objects);
     const choices = generateChoices(target, phase.min, phase.max, Math.min(3, phase.max - phase.min + 1));
     let answered = false;
     let cleanupIdle = null;
 
     function render() {
-        const objectsHtml = Array(target)
-            .fill(0)
-            .map(() => `<div class="object-item">${objectEmoji}</div>`)
-            .join('');
-
-        const choicesHtml = choices
-            .map(n => `<button class="choice-btn" data-value="${n}">${n}</button>`)
-            .join('');
-
         container.innerHTML = `
-            <div class="objects-container" id="flash-area">${objectsHtml}</div>
+            <div class="objects-container" id="flash-area"></div>
             <div class="number-hebrew" id="question-text">?כמה יש</div>
-            <div class="choices-container" id="choices">${choicesHtml}</div>
+            <div class="choices-container" id="choices"></div>
         `;
 
-        const objectEls = container.querySelectorAll('.object-item');
-        objectEls.forEach((el, i) => {
+        const flashArea = container.querySelector('#flash-area');
+        for (let i = 0; i < target; i++) {
+            const el = makeObjectEl(theme, i);
             el.style.animationDelay = (i * 0.08) + 's';
             popIn(el);
+            flashArea.appendChild(el);
+        }
+
+        const choicesEl = container.querySelector('#choices');
+        choices.forEach(n => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.dataset.value = n;
+            btn.textContent = n;
+            btn.addEventListener('click', (e) => handleChoice(e, n));
+            choicesEl.appendChild(btn);
         });
 
-        // Flash: show objects briefly, then hide
+        // Flash: show objects briefly, then fade
         setTimeout(() => {
-            objectEls.forEach(el => {
+            flashArea.querySelectorAll('.object-item').forEach(el => {
                 el.style.transition = 'opacity 0.3s ease';
                 el.style.opacity = '0.15';
             });
         }, 1500 + target * 300);
-
-        container.querySelectorAll('.choice-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => handleChoice(e, parseInt(btn.dataset.value)));
-        });
 
         cleanupIdle = addIdleWiggle(container);
     }
@@ -70,15 +83,9 @@ export function createSubitizingGame(container, phase, onComplete, theme) {
         } else {
             btn.classList.add('wrong');
             audio.playGentleError();
-
-            // Highlight correct answer
             container.querySelectorAll('.choice-btn').forEach(b => {
-                if (parseInt(b.dataset.value) === target) {
-                    b.classList.add('glow');
-                }
+                if (parseInt(b.dataset.value) === target) b.classList.add('glow');
             });
-
-            // Count together
             await audio.speakNumber(target);
             await celebrateAttempt();
         }

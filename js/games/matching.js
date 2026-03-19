@@ -1,13 +1,23 @@
-import { randomInRange, pickRandomObject, generateChoices, getNumberData, NUMBER_COLORS } from '../data.js';
+import { randomInRange, generateChoices, getNumberData, NUMBER_COLORS } from '../data.js';
 import { audio } from '../audio.js';
 import { popIn, addIdleWiggle } from '../animations.js';
 import { celebrateCorrect, celebrateAttempt } from '../components/celebration.js';
 
+function makeGroupHtml(theme, count) {
+    let html = '';
+    for (let i = 0; i < count; i++) {
+        if (theme && theme.useImages) {
+            html += `<img src="${theme.images[i % theme.images.length]}" alt="" class="theme-obj-img" style="width:36px;height:36px;"> `;
+        } else {
+            html += '\uD83C\uDF4E ';
+        }
+    }
+    return html;
+}
+
 export function createMatchingGame(container, phase, onComplete, theme) {
-    // Alternate between "match numeral to group" and "match group to numeral"
     const mode = Math.random() > 0.5 ? 'numToGroup' : 'groupToNum';
     const target = randomInRange(phase.min, phase.max);
-    const objectEmoji = pickRandomObject(theme && theme.objects);
     let answered = false;
     let cleanupIdle = null;
 
@@ -16,8 +26,8 @@ export function createMatchingGame(container, phase, onComplete, theme) {
         const choiceValues = generateChoices(target, phase.min, phase.max, Math.min(3, phase.max - phase.min + 1));
 
         const groupsHtml = choiceValues.map(n => {
-            const objs = Array(n).fill(objectEmoji).join(' ');
-            return `<button class="choice-btn" data-value="${n}" style="width:auto;height:auto;border-radius:var(--radius);padding:12px 16px;min-width:80px;min-height:80px;font-size:1.8rem;">${objs}</button>`;
+            const group = makeGroupHtml(theme, n);
+            return `<button class="choice-btn" data-value="${n}" style="width:auto;height:auto;border-radius:var(--radius);padding:12px 16px;min-width:80px;min-height:80px;font-size:1.8rem;display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;">${group}</button>`;
         }).join('');
 
         container.innerHTML = `
@@ -32,26 +42,42 @@ export function createMatchingGame(container, phase, onComplete, theme) {
     }
 
     function renderGroupToNum() {
-        const objects = Array(target).fill(0).map(() =>
-            `<div class="object-item">${objectEmoji}</div>`
-        ).join('');
-
-        const choiceValues = generateChoices(target, phase.min, phase.max, Math.min(3, phase.max - phase.min + 1));
-        const numBtns = choiceValues.map(n => {
-            const color = NUMBER_COLORS[n] || '#333';
-            return `<button class="choice-btn" data-value="${n}" style="color:${color}">${n}</button>`;
-        }).join('');
-
         container.innerHTML = `
-            <div class="objects-container">${objects}</div>
+            <div class="objects-container" id="objects-area"></div>
             <div class="number-hebrew">?איזה מספר</div>
-            <div class="choices-container" id="choices">${numBtns}</div>
+            <div class="choices-container" id="choices"></div>
         `;
 
-        container.querySelectorAll('.object-item').forEach((el, i) => {
+        const area = container.querySelector('#objects-area');
+        for (let i = 0; i < target; i++) {
+            const el = document.createElement('div');
+            el.className = 'object-item';
+            if (theme && theme.useImages) {
+                const img = document.createElement('img');
+                img.src = theme.images[i % theme.images.length];
+                img.alt = '';
+                img.className = 'theme-obj-img';
+                el.appendChild(img);
+            } else {
+                el.textContent = '\uD83C\uDF4E';
+            }
             el.style.animationDelay = (i * 0.08) + 's';
             popIn(el);
+            area.appendChild(el);
+        }
+
+        const choiceValues = generateChoices(target, phase.min, phase.max, Math.min(3, phase.max - phase.min + 1));
+        const choicesEl = container.querySelector('#choices');
+        choiceValues.forEach(n => {
+            const color = NUMBER_COLORS[n] || '#333';
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.dataset.value = n;
+            btn.textContent = n;
+            btn.style.color = color;
+            choicesEl.appendChild(btn);
         });
+
         setupListeners();
     }
 
