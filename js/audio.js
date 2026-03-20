@@ -5,7 +5,8 @@ class AudioManager {
         this.ctx = null;
         this.enabled = true;
         this.initialized = false;
-        this.audioCache = {};
+        this.hebrewVoice = null;
+        this.voicesLoaded = false;
     }
 
     init() {
@@ -16,6 +17,32 @@ class AudioManager {
         } catch (e) {
             console.warn('Web Audio API not available');
         }
+        this._loadVoices();
+    }
+
+    _loadVoices() {
+        const findBest = () => {
+            const voices = speechSynthesis.getVoices();
+            if (!voices.length) return;
+            this.voicesLoaded = true;
+
+            // Prefer high-quality Hebrew voices
+            const heVoices = voices.filter(v => v.lang.startsWith('he'));
+            if (heVoices.length) {
+                // Prefer Google or premium voices
+                this.hebrewVoice =
+                    heVoices.find(v => v.name.includes('Google')) ||
+                    heVoices.find(v => !v.localService) ||
+                    heVoices[0];
+            }
+        };
+
+        findBest();
+        // Voices load async on many browsers
+        speechSynthesis.onvoiceschanged = findBest;
+        // Some mobile browsers need a retry
+        setTimeout(findBest, 500);
+        setTimeout(findBest, 2000);
     }
 
     toggle() {
@@ -23,44 +50,34 @@ class AudioManager {
         return this.enabled;
     }
 
-    // Use Google Translate TTS for high-quality Hebrew speech
-    _googleTtsUrl(text) {
-        return `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=he&q=${encodeURIComponent(text)}`;
-    }
-
-    _playAudioUrl(url) {
+    speak(text) {
         if (!this.enabled) return Promise.resolve();
         return new Promise(resolve => {
-            const audio = new Audio(url);
-            audio.volume = 1.0;
-            audio.onended = resolve;
-            audio.onerror = () => {
-                // Fallback to SpeechSynthesis
-                this._speakFallback(url.includes('q=') ? decodeURIComponent(url.split('q=')[1]) : '');
-                resolve();
-            };
-            audio.play().catch(() => {
-                this._speakFallback(decodeURIComponent(url.split('q=')[1] || ''));
-                resolve();
-            });
-        });
-    }
+            // Cancel any ongoing speech
+            speechSynthesis.cancel();
 
-    _speakFallback(text) {
-        if (!this.enabled || !text) return;
-        try {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'he-IL';
-            utterance.rate = 0.85;
-            utterance.pitch = 1.1;
-            speechSynthesis.cancel();
-            speechSynthesis.speak(utterance);
-        } catch (e) { /* ignore */ }
-    }
+            utterance.rate = 0.8;
+            utterance.pitch = 1.05;
+            utterance.volume = 1.0;
 
-    speak(text, rate = 0.85) {
-        if (!this.enabled) return Promise.resolve();
-        return this._playAudioUrl(this._googleTtsUrl(text));
+            if (this.hebrewVoice) {
+                utterance.voice = this.hebrewVoice;
+            }
+
+            utterance.onend = resolve;
+            utterance.onerror = resolve;
+
+            // Mobile Safari fix: speech can stall, add timeout
+            const timeout = setTimeout(resolve, 4000);
+            utterance.onend = () => { clearTimeout(timeout); resolve(); };
+            utterance.onerror = () => { clearTimeout(timeout); resolve(); };
+
+            // Mobile Chrome fix: must speak from user gesture context
+            // We queue it — the first user tap in splash already unlocks it
+            speechSynthesis.speak(utterance);
+        });
     }
 
     speakNumber(n) {
@@ -77,6 +94,7 @@ class AudioManager {
     playTone(freq, duration = 0.15, type = 'sine') {
         if (!this.enabled || !this.ctx) return;
         try {
+            if (this.ctx.state === 'suspended') this.ctx.resume();
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = type;
@@ -110,6 +128,7 @@ class AudioManager {
     playWhoosh() {
         if (!this.enabled || !this.ctx) return;
         try {
+            if (this.ctx.state === 'suspended') this.ctx.resume();
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = 'sawtooth';
@@ -125,7 +144,6 @@ class AudioManager {
     }
 
     playGentleError() {
-        // More noticeable wrong sound — descending tones
         this.playTone(400, 0.15, 'triangle');
         setTimeout(() => this.playTone(300, 0.15, 'triangle'), 120);
         setTimeout(() => this.playTone(200, 0.25, 'triangle'), 240);
